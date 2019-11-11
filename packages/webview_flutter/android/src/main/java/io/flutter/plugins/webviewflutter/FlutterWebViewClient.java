@@ -5,6 +5,9 @@
 package io.flutter.plugins.webviewflutter;
 
 import android.annotation.TargetApi;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -26,12 +29,25 @@ class FlutterWebViewClient {
   private final MethodChannel methodChannel;
   private boolean hasNavigationDelegate;
 
+  private void handleOtherScheme(String url, Context context) {
+    Intent intent = new Intent(Intent.ACTION_VIEW);
+    intent.setData(Uri.parse(url));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    context.startActivity(intent);
+  }
+
   FlutterWebViewClient(MethodChannel methodChannel) {
     this.methodChannel = methodChannel;
   }
 
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
   private boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+
+    if (!request.getUrl().getScheme().startsWith("http")) {
+      handleOtherScheme(request.getUrl().toString(), view.getContext());
+      return true;
+    }
+
     if (!hasNavigationDelegate) {
       return false;
     }
@@ -52,6 +68,12 @@ class FlutterWebViewClient {
   }
 
   private boolean shouldOverrideUrlLoading(WebView view, String url) {
+
+    if (url.startsWith("http")) {
+      handleOtherScheme(url, view.getContext());
+      return true;
+    }
+
     if (!hasNavigationDelegate) {
       return false;
     }
