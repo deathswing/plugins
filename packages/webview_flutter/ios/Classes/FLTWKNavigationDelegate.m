@@ -19,6 +19,14 @@
 - (void)webView:(WKWebView*)webView
     decidePolicyForNavigationAction:(WKNavigationAction*)navigationAction
                     decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+  NSString* scheme = [navigationAction.request.URL scheme];
+  if (![scheme hasPrefix:@"http"]) {
+    NSLog(@"处理非http请求");
+    [_methodChannel invokeMethod:@"onPageFinished" arguments:@{@"url" : navigationAction.request.URL.absoluteString}];
+    if (!self.hasDartNavigationDelegate) 
+      decisionHandler(WKNavigationActionPolicyAllow);
+    return;
+  }
   if (!self.hasDartNavigationDelegate) {
     decisionHandler(WKNavigationActionPolicyAllow);
     return;
